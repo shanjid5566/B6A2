@@ -35,7 +35,22 @@ const getAllVehicles = async () => {
     console.log(error.message);
   }
 };
+
+const getSingleVehicle = async (vehicleId: string) => {
+  try {
+    const result = await pool.query(
+      `
+    SELECT * FROM vehicles WHERE id = $1
+    `,
+      [vehicleId]
+    );
+    return result;
+  } catch (error: any) {
+    console.log(error.message);
+  }
+};
 export const vehicleServices = {
   createVehicles,
-  getAllVehicles
+  getAllVehicles,
+  getSingleVehicle,
 };
