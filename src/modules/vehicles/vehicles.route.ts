@@ -3,8 +3,9 @@ import { vehicleController } from "./vehicles.controller";
 import authMiddleware from "../../middleware/auth.middleware";
 
 const route = Router();
-route.post("/",authMiddleware("admin"), vehicleController.createVehicles);
+route.post("/", authMiddleware("admin"), vehicleController.createVehicles);
 route.get("/", vehicleController.getAllVehicles);
 route.get("/:vehicleId", vehicleController.getSingleVehicle);
 route.put("/:vehicleId", vehicleController.updateVehicle);
+route.delete("/:vehicleId", vehicleController.deleteVehicle);
 export const vehicleRoute = route;
