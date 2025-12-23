@@ -1,3 +1,5 @@
+import jwt from "jsonwebtoken";
+import config from "../../config";
 import { pool } from "../../config/db";
 import bcrypt from "bcryptjs";
 
@@ -17,7 +19,31 @@ const signup = async (payload: Record<string, unknown>) => {
     console.log(error.message);
   }
 };
-
+const signin = async (email: string, password: string) => {
+  const result = await pool.query(
+    `
+        SELECT * FROM users WHERE email=$1`,
+    [email]
+  );
+  if (result.rows.length === 0) {
+    return null;
+  }
+  const user = result.rows[0];
+  const match = await bcrypt.compare(password, user.password);
+  if (!match) {
+    return false;
+  }
+  const secret = config.user_secret_key as string;
+  const token = jwt.sign(
+    { name: user.name, email: user.email, roll: user.role },
+    secret,
+    {
+      expiresIn: "7d",
+    }
+  );
+  return { token, user };
+};
 export const authServices = {
   signup,
+  signin,
 };
