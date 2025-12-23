@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import { authRoute } from "./modules/auth/auth.route";
+import { vehicleRoute } from "./modules/vehicles/vehicles.route";
 
 const app = express();
 
@@ -11,6 +12,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // sign up new user
-app.use("/api/v1", authRoute);
+app.use("/api/v1/auth", authRoute);
+app.use("/api/v1/vehicles", vehicleRoute);
 
 export default app;
