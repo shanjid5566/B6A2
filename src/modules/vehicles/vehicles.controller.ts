@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { vehicleServices } from "./vehicles.services";
 import { pool } from "../../config/db";
 
+// create vecicle
+
 const createVehicles = async (req: Request, res: Response) => {
   try {
     const result = await vehicleServices.createVehicles(req.body);
@@ -18,6 +20,8 @@ const createVehicles = async (req: Request, res: Response) => {
     });
   }
 };
+
+// get all vehicle
 const getAllVehicles = async (req: Request, res: Response) => {
   try {
     const result = await vehicleServices.getAllVehicles();
@@ -29,7 +33,28 @@ const getAllVehicles = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to create vehicle.",
+      message: "Failed to Get all vehicle.",
+      error: (error as Error)?.message ?? "Unknown error",
+    });
+  }
+};
+
+// get single vehicle
+
+const getSingleVehicle = async (req: Request, res: Response) => {
+  try {
+    const result = await vehicleServices.getSingleVehicle(
+      req.params.vehicleId as string
+    );
+    res.status(201).json({
+      success: true,
+      message: "Successfully single Get vehicles.",
+      user: result?.rows[0] ?? null,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to get single vehicle.",
       error: (error as Error)?.message ?? "Unknown error",
     });
   }
