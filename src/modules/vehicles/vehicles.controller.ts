@@ -60,24 +60,6 @@ const getSingleVehicle = async (req: Request, res: Response) => {
   }
 };
 
-const getSingleVehicle = async (req: Request, res: Response) => {
-  try {
-    const result = await vehicleServices.getSingleVehicle(
-      req.params.vehicleId as string
-    );
-    res.status(201).json({
-      success: true,
-      message: "Successfully single Get vehicles.",
-      user: result?.rows[0] ?? null,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to get single vehicle.",
-      error: (error as Error)?.message ?? "Unknown error",
-    });
-  }
-};
 
 const updateVehicle = async (req: Request, res: Response) => {
   const {
@@ -108,7 +90,6 @@ const updateVehicle = async (req: Request, res: Response) => {
   }
 };
 const deleteVehicle = async (req: Request, res: Response) => {
-  // console.log(req.params.vehicleId);
   try {
     const result = await vehicleServices.deleteVehicle(req.params.vehicleId as string);
     console.log(result)

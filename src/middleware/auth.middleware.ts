@@ -12,8 +12,8 @@ const authMiddleware = (...roles: string[]) => {
         config.user_secret_key as string
       ) as JwtPayload;
       req.user = decoded;
-      console.log(decoded);
-      if (!roles.includes(decoded.roll)) {
+      console.log(decoded)
+      if (!roles.includes(decoded.role)) {
         return res.status(401).json({ message: "Unauthorized" });
       }
       next();
