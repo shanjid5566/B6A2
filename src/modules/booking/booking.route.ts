@@ -13,4 +13,19 @@ route.get(
   authMiddleware("admin","user"),
   bookingController.getBooking
 );
+route.delete(
+  "/:id",
+  authMiddleware("admin","user"),
+  bookingController.cancelBooking
+);
+route.post(
+  "/:id/return",
+  authMiddleware("admin"),
+  bookingController.markReturned
+);
+route.post(
+  "/auto-return",
+  authMiddleware("admin"),
+  bookingController.autoReturn
+);
 export const bookingRoute = route;

@@ -119,7 +119,77 @@ const getBooking = async (req: Request, res: Response) => {
   }
 };
 
+const cancelBooking = async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+
+  const bookingId = req.params.id;
+  if (!bookingId) return res.status(400).json({ error: 'Missing booking id' });
+
+  try {
+    const bookingRes = await bookingServices.getBookingById(String(bookingId));
+    const booking = bookingRes?.rows?.[0];
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    const decoded: any = req.user;
+    const role = decoded.role;
+    const customerIdRaw = decoded.id ?? decoded.user_id;
+
+    if (role !== 'admin' && String(booking.customer_id) !== String(customerIdRaw)) {
+      return res.status(403).json({ error: "Forbidden: cannot cancel others' bookings" });
+    }
+
+    const now = new Date();
+    const startDate = new Date(booking.rent_start_date);
+    if (isNaN(startDate.getTime())) return res.status(500).json({ error: 'Invalid booking start date stored' });
+
+    if (now >= startDate && role !== 'admin') {
+      return res.status(400).json({ error: 'Cannot cancel booking on or after start date' });
+    }
+
+    const del = await bookingServices.deleteBookingById(String(bookingId));
+    return res.status(200).json({ success: true, booking: del.rows[0] });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: 'server', error: (error as Error).message });
+  }
+};
+
+const markReturned = async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+  const decoded: any = req.user;
+  if (decoded.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
+
+  const bookingId = req.params.id;
+  if (!bookingId) return res.status(400).json({ error: 'Missing booking id' });
+
+  try {
+    const resObj = await bookingServices.markBookingReturned(String(bookingId));
+    if (!resObj) return res.status(404).json({ error: 'Booking not found' });
+    return res.status(200).json({ success: true, vehicle: resObj.vehicle });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: 'server', error: (error as Error).message });
+  }
+};
+
+const autoReturn = async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+  const decoded: any = req.user;
+  if (decoded.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
+
+  try {
+    const result = await bookingServices.autoReturnExpiredBookings();
+    return res.status(200).json({ success: true, updated: result.rowCount, vehicles: result.rows });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: 'server', error: (error as Error).message });
+  }
+};
+
 export const bookingController = {
   createBooking,
   getBooking,
+  cancelBooking,
+  markReturned,
+  autoReturn,
 };

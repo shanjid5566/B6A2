@@ -42,9 +42,48 @@ const hasOverlappingBooking = async (
   return result;
 };
 
+const getBookingById = async (id: string) => {
+  const result = await pool.query(`SELECT * FROM bookings WHERE id = $1`, [id]);
+  return result;
+};
+
+const deleteBookingById = async (id: string) => {
+  const result = await pool.query(`DELETE FROM bookings WHERE id = $1 RETURNING *`, [id]);
+  return result;
+};
+
+const markBookingReturned = async (bookingId: string) => {
+  // find booking
+  const bookingRes = await pool.query(`SELECT * FROM bookings WHERE id = $1`, [bookingId]);
+  const booking = bookingRes.rows[0];
+  if (!booking) return null;
+  const vehicleId = booking.vehicle_id;
+  const updateRes = await pool.query(`UPDATE vehicles SET availability_status = $1, updated_at = now() WHERE id = $2 RETURNING *`, [
+    'available',
+    vehicleId,
+  ]);
+  return { booking, vehicle: updateRes.rows[0] };
+};
+
+const autoReturnExpiredBookings = async () => {
+  // mark vehicles available where booking end date is before today
+  const result = await pool.query(`
+    UPDATE vehicles
+    SET availability_status = $1, updated_at = now()
+    WHERE id IN (
+      SELECT vehicle_id FROM bookings WHERE rent_end_date < CURRENT_DATE
+    ) RETURNING *
+  `, ['available']);
+  return result;
+};
+
 export const bookingServices = {
   createBooking,
   getAllBookings,
   getBookingsByCustomer,
   hasOverlappingBooking,
+  getBookingById,
+  deleteBookingById,
+  markBookingReturned,
+  autoReturnExpiredBookings,
 };
