@@ -8,12 +8,24 @@ const createBooking = async (req: Request, res: Response) => {
 
   const customerIdRaw = (req.user as any).id ?? (req.user as any).user_id;
   if (customerIdRaw === undefined) {
-    return res.status(401).json({ error: "Invalid token: missing user id. Please sign in again." });
+    return res
+      .status(401)
+      .json({ error: "Invalid token: missing user id. Please sign in again." });
   }
 
   const { vehicle_id, rent_start_date, rent_end_date, daily_rate } = req.body;
-  if (!vehicle_id || !rent_start_date || !rent_end_date || daily_rate === undefined) {
-    return res.status(400).json({ error: "Missing required fields: vehicle_id, rent_start_date, rent_end_date, daily_rate" });
+  if (
+    !vehicle_id ||
+    !rent_start_date ||
+    !rent_end_date ||
+    daily_rate === undefined
+  ) {
+    return res
+      .status(400)
+      .json({
+        error:
+          "Missing required fields: vehicle_id, rent_start_date, rent_end_date, daily_rate",
+      });
   }
 
   const daily_rate_number = Number(daily_rate);
@@ -24,19 +36,32 @@ const createBooking = async (req: Request, res: Response) => {
   const startDate = new Date(rent_start_date as string);
   const endDate = new Date(rent_end_date as string);
   if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-    return res.status(400).json({ error: "Invalid rent_start_date or rent_end_date" });
+    return res
+      .status(400)
+      .json({ error: "Invalid rent_start_date or rent_end_date" });
   }
 
   const msPerDay = 1000 * 60 * 60 * 24;
   let days = Math.round((endDate.getTime() - startDate.getTime()) / msPerDay);
   if (days < 0) {
-    return res.status(400).json({ error: "rent_end_date must be after rent_start_date" });
+    return res
+      .status(400)
+      .json({ error: "rent_end_date must be after rent_start_date" });
   }
   days = Math.max(days, 1);
 
   const total_price = daily_rate_number * days;
 
   try {
+    // check overlapping bookings for the vehicle
+    const overlap = await bookingServices.hasOverlappingBooking(
+      String(vehicle_id),
+      String(rent_start_date),
+      String(rent_end_date)
+    );
+    if (overlap && overlap.rows && overlap.rows.length > 0) {
+      return res.status(400).json({ success: false, message: "Vehicle already booked for selected dates" });
+    }
     const result = await bookingServices.createBooking(
       String(customerIdRaw),
       String(vehicle_id),
@@ -59,6 +84,42 @@ const createBooking = async (req: Request, res: Response) => {
   }
 };
 
+const getBooking = async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const decoded: any = req.user;
+  const role = decoded.role;
+  const customerIdRaw = decoded.id ?? decoded.user_id;
+
+  try {
+    if (role === "admin") {
+      const result = await bookingServices.getAllBookings();
+      return res.status(200).json({ success: true, bookings: result.rows });
+    }
+
+    if (customerIdRaw === undefined) {
+      return res.status(401).json({ error: "Invalid token: missing user id." });
+    }
+
+    const result = await bookingServices.getBookingsByCustomer(
+      String(customerIdRaw)
+    );
+    return res.status(200).json({ success: true, bookings: result.rows });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: "server",
+        error: (error as Error).message,
+      });
+  }
+};
+
 export const bookingController = {
   createBooking,
+  getBooking,
 };

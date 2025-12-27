@@ -7,10 +7,11 @@ import { pool } from "../../config/db";
 const createVehicles = async (req: Request, res: Response) => {
   try {
     const result = await vehicleServices.createVehicles(req.body);
+    console.log(result)
     res.status(201).json({
       success: true,
       message: "Successfully vehicle Created.",
-      user: result?.rows[0] ?? null,
+      user: result ?? null,
     });
   } catch (error) {
     res.status(500).json({

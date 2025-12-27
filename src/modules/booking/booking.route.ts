@@ -8,5 +8,9 @@ route.post(
   authMiddleware("admin","user"),
   bookingController.createBooking
 );
-
+route.get(
+  "/",
+  authMiddleware("admin","user"),
+  bookingController.getBooking
+);
 export const bookingRoute = route;
